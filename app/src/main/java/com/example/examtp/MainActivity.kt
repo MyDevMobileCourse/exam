@@ -1,5 +1,6 @@
 package com.example.examtp
 
+import android.content.Intent
 import android.graphics.Color
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
@@ -25,6 +26,7 @@ class MainActivity : AppCompatActivity() {
     var mUsers: MutableList<Movie> = ArrayList<Movie>()
     lateinit var sharedPref:SharedPref
     var myFavMovie : HashMap<String,String> = HashMap<String,String>()
+    var positionOfItem : Int = -1
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -53,12 +55,22 @@ class MainActivity : AppCompatActivity() {
             for ((k,v) in myFavMovie){
                 sharedPref.save(k,v)
             }
+            fav.isEnabled = false
+            fav.isClickable = false
+            showFav.isEnabled = true
+            showFav.isClickable = true
+            val viewHolder = reView.findViewHolderForAdapterPosition(positionOfItem) as ListAdapter.UserViewHolder
+            viewHolder.nomFilm.setTextColor(Color.BLACK)
+
             Toast.makeText(this,"Favoris sauvegardés",Toast.LENGTH_SHORT).show()
         }
 
         if (sharedPref.sharedPref.contains("nomfilm")){
             showFav.isEnabled = true
             showFav.isClickable = true
+        } else{
+            showFav.isEnabled = false
+            showFav.isClickable = false
         }
             showFav.setOnClickListener {
                 println("showFav")
@@ -66,7 +78,14 @@ class MainActivity : AppCompatActivity() {
                 println(sharedPref.getValueString("genre"))
                 println(sharedPref.getValueString("duree"))
                 println(sharedPref.getValueString("date"))
+                val intent = Intent(this, ShowFavorite::class.java)
+                startActivity(intent)
             }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        initButtons()
     }
 
     fun initRecyclerView() {
@@ -76,21 +95,39 @@ class MainActivity : AppCompatActivity() {
         mAdapter.onItemClick = { movie, position ->
             println("clicked")
             println(movie.nomfilm)
-            myFavMovie.put("nomfilm",movie.nomfilm)
-            myFavMovie.put("genre",movie.genre)
-            myFavMovie.put("duree",movie.duree)
-            myFavMovie.put("date",Date().toString())
-            fav.isEnabled = true
-            fav.isClickable = true
+            println(position)
+            println(positionOfItem)
             for (i in 0 until mUsers.size) {
                 if (i != position) {
+                    println("first if ")
                     val viewHolder = reView.findViewHolderForAdapterPosition(i) as ListAdapter.UserViewHolder
                     viewHolder.nomFilm.setTextColor(Color.BLACK)
                 } else{
-                    val viewHolder = reView.findViewHolderForAdapterPosition(i) as ListAdapter.UserViewHolder
-                    viewHolder.nomFilm.setTextColor(Color.RED)
+                    println("else ")
+                    if(positionOfItem == i ){
+                        println("second if ")
+                        positionOfItem = -1
+                        fav.isEnabled = false
+                        fav.isClickable = false
+                        val viewHolder = reView.findViewHolderForAdapterPosition(i) as ListAdapter.UserViewHolder
+                        viewHolder.nomFilm.setTextColor(Color.BLACK)
+                    }else{
+                        println("second else ")
+                        val viewHolder = reView.findViewHolderForAdapterPosition(i) as ListAdapter.UserViewHolder
+                        viewHolder.nomFilm.setTextColor(Color.RED)
+                        myFavMovie.put("nomfilm",movie.nomfilm)
+                        myFavMovie.put("genre",movie.genre)
+                        myFavMovie.put("duree",movie.duree)
+                        myFavMovie.put("date",Date().toString())
+                        fav.isEnabled = true
+                        fav.isClickable = true
+                        positionOfItem = position
+
+                    }
+
                 }
             }
+
         }
         reView.adapter = mAdapter
         reView.visibility = View.INVISIBLE
